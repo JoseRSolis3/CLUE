@@ -60,18 +60,18 @@ class THOTH:
             self.__commit()
         return self
 
-    def add_data(self, table_name, data: dict, params: list):
+    def add_data(self, table_name, data: dict, params: list = []):
         columns = ", ".join(data.keys())
         values = ", ".join(["%s"] * len(data))
         query = f"INSERT INTO {table_name} ({columns}) VALUES ({values});"
         with self.__conn.cursor() as cursor:
-            cursor.execute(query, params)
+            cursor.execute(query, params or list(data.values()))
             self.__commit()
         return self
 
     # READ
 
-    def get_data(self, table_name, columns: list, condition: str, params: list):
+    def get_data(self, table_name, columns: list, condition: str = "", params: list = []):
         cols = ", ".join(columns) if columns else "*"
         query = f"SELECT {cols} FROM {table_name}"
         if condition:
@@ -84,7 +84,7 @@ class THOTH:
 
     # UPDATE
 
-    def update_data(self, table_name, data: dict, condition: str, params: list):
+    def update_data(self, table_name, data: dict, condition: str = "", params: list = []):
         set_clause = ", ".join([f"{col} = %s" for col in data.keys()])
         query = f"UPDATE {table_name} SET {set_clause} WHERE {condition};"
         with self.__conn.cursor() as cursor:
@@ -94,8 +94,11 @@ class THOTH:
 
     # DELETE
 
-    def delete_data(self, table_name, condition: str, params: list):
-        query = f"DELETE FROM {table_name} WHERE {condition};"
+    def delete_data(self, table_name, condition: str = "", params: list = []):
+        query = f"DELETE FROM {table_name}"
+        if condition:
+            query += f" WHERE {condition}"
+        query += ";"
         with self.__conn.cursor() as cursor:
             cursor.execute(query, params)
             self.__commit()

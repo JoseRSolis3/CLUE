@@ -14,6 +14,17 @@ class CLUE:
         return self
 
     def subject(self):
-        name = input("Enter the subject name\n>>> ")
-        
-        
+        while True:
+            name:str = input("Enter the subject name\n>>> ")
+            if not isinstance(name, str) or not name.strip():
+                print("Invalid subject name.")
+                continue
+            self.db.create_table(name.strip(), {"id": "INTEGER PRIMARY KEY AUTOINCREMENT", "question": "TEXT", "answer": "TEXT"})
+            questions = {}
+            question:str = input("Enter the question\n>>> ").strip()
+            answer:str = input("Enter the answer\n>>> ").strip()
+            questions[question] = answer
+            for q, a in questions.items():
+                self.db.add_data(name.strip(), {"question": q, "answer": a})
+            self.db.close()
+            print(f"Subject '{name.strip()}' has been created and questions have been added.")
