@@ -15,5 +15,5 @@ class CLUE:
 
     def subject(self):
         name = input("Enter the subject name\n>>> ")
-        self.db.
+        
         
