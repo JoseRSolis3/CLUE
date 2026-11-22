@@ -2,6 +2,10 @@ import psycopg2
 import getpass
 from typing import Literal
 
+green = "\033[92m"
+reset = "\033[0m"
+red = "\033[91m"
+
 class THOTH:
     # Transactional Handler for Operational Table Handling: T.H.O.T.H
     def __init__(self):
@@ -23,8 +27,8 @@ class THOTH:
             case _:
                 return False
 
-    def connect(self):
-        while True:
+    def connect(self, attmepts:int =3):
+        while attmepts > 0:
             username = input(f"{self.input_prefix}> username:\n>>> ")
             if not self._d_type_checker(username, "str"):
                 continue
@@ -37,6 +41,7 @@ class THOTH:
             port = input(f"{self.input_prefix}> port:\n>>> ")
             if not self._d_type_checker(port, "str"):
                 continue
+            attmepts -= 1
             database = input(f"{self.input_prefix}> database:\n>>> ")
             if not self._d_type_checker(database, "str"):
                 continue
@@ -47,8 +52,10 @@ class THOTH:
                 port=port,
                 database=database
             )
-            self.input_prefix = f"T.H.O.T.H/{username}@{host}:{port}"
+            self.input_prefix = f"T.H.O.T.H/{green}{username}@{host}:{port}{reset}"
+            print(f"{self.input_prefix}> Connected successfully.")
             return conn
+        raise ConnectionError("Failed to connect after multiple attempts.")
 
     # CREATE
 
@@ -58,6 +65,7 @@ class THOTH:
         with self.__conn.cursor() as cursor:
             cursor.execute(query)
             self.__commit()
+        print(f"{self.input_prefix}> Table '{table_name}' created successfully.")
         return self
 
     def add_data(self, table_name, data: dict, params: list = []):
@@ -105,5 +113,7 @@ class THOTH:
         return self
     
     def close(self):
+        self.input_prefix = f"T.H.O.T.H/{red}Disconnected{reset}"
+        print(f"{self.input_prefix}> Connection closed.")
         self.__close()
 
