@@ -50,16 +50,17 @@ class DB:
         conn.commit()
         conn.close()
 
-    def get_data(self, table_name:str, conditions:dict):
+    def get_data(self, table_name:str, conditions:dict = {}):
         conn = sqlite3.connect(os.path.join("databases", self.__name))
         cursor = conn.cursor()
-        query = f"SELECT * FROM {table_name}"
-        if conditions:
+        if conditions == {}:
+            query = f"SELECT * FROM {table_name}"
+            cursor.execute(query)
+        else:
+            query = f"SELECT * FROM {table_name}"
             cond_str = ' AND '.join([f"{col} = ?" for col in conditions.keys()])
             query += f" WHERE {cond_str}"
             cursor.execute(query, tuple(conditions.values()))
-        else:
-            cursor.execute(query)
         rows = cursor.fetchall()
         conn.close()
         return rows

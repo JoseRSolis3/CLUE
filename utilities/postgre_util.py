@@ -1,10 +1,21 @@
 import psycopg2
 import getpass
 from typing import Literal
+from utilities.sqlite_util import DB
 
 green = "\033[92m"
 reset = "\033[0m"
 red = "\033[91m"
+
+Seshat = DB("databases")
+Seshat.create_table(
+    "databases", {
+        "id" : "INTEGER PRIMARY KEY",
+        "name" : "TEXT UNIQUE",
+        "ip" : "TEXT",
+        "port" : "INTEGER VARCHAR(5)"
+    }
+)
 
 class THOTH:
     # Transactional Handler for Operational Table Handling: T.H.O.T.H
@@ -27,7 +38,31 @@ class THOTH:
             case _:
                 return False
 
+    def check_saved_databases(self):
+        check = Seshat.get_data("databases")
+        if check:
+            print("Current Saved Databases:\n")
+            for i, database in enumerate(check, 1):
+                db_name = database[1]
+                ip = database[2]
+                port = database[3]
+                print(f"{i}. {db_name} ({ip}:{port})")
+            input("\nPlease select a database or press Enter to continue:\n>>> ")
+            return db_name,ip, port
+        else: 
+            print("No saved databases found.\n")
+            db_name = "default"
+            ip = "localhost"
+            port = "5432"
+            return db_name, ip, port
+
     def connect(self, attmepts:int =3):
+        db_name, host, port = self.check_saved_databases()
+        if db_name != "default":
+            saved = True
+        else:
+            saved = False
+        self.input_prefix = f"\n{self.input_prefix}@{green}{db_name}{reset}"
         while attmepts > 0:
             username = input(f"{self.input_prefix}> username:\n>>> ")
             if not self._d_type_checker(username, "str"):
@@ -35,12 +70,30 @@ class THOTH:
             password = getpass.getpass(f"{self.input_prefix}> password:\n>>> ")
             if not self._d_type_checker(password, "str"):
                 continue
-            host = input(f"{self.input_prefix}> host:\n>>> ")
-            if not self._d_type_checker(host, "str"):
-                continue
-            port = input(f"{self.input_prefix}> port:\n>>> ")
-            if not self._d_type_checker(port, "str"):
-                continue
+            match host, port:
+                case None, None:
+                    host = input(f"{self.input_prefix}> host:\n>>> ")
+                    if not self._d_type_checker(host, "str"):
+                        continue
+                    port = input(f"{self.input_prefix}> port:\n>>> ")
+                    if not self._d_type_checker(port, "str"):
+                        continue
+            if saved:
+                print("Database connection already saved.")
+            else:
+                save = input(f"{self.input_prefix}> Save connection? (y/n):\n>>> ")
+                if not self._d_type_checker(save, "str"):
+                    continue
+                else:
+                    if save.lower() == "y":
+                        database = input(f"{self.input_prefix}> database name to save:\n>>> ")
+                        if not self._d_type_checker(database, "str"):
+                            continue
+                        Seshat.add_data("databases", {
+                            "name": database,
+                            "ip": host,
+                            "port": port
+                        })
             attmepts -= 1
             database = input(f"{self.input_prefix}> database:\n>>> ")
             if not self._d_type_checker(database, "str"):
